@@ -13,6 +13,7 @@ CALLBACK_URL = 'http://127.0.0.1:8000/oauth_test/callback'
 PROFILE_URL = SERVER + 'people/@me/@self'
 FRIENDS_URL = SERVER + 'people/@me/@friends'
 CONNECT_URL = SERVER + 'oauth/connect'
+WEIBO_FLAG_URL = SERVER + 'weibo/openflag'
 WEIBO_URL   = SERVER + 'weibo/display'
 # key and secret
 CONSUMER_KEY = 'GDdmIQH6jhtmLUypg82g'
@@ -34,28 +35,16 @@ class QQ_OAuthClient(oauth.OAuthClient):
     def access_resource(self, oauth_request):
         return self._excute(oauth_request)
 
-    def _excute(self, oauth_request):
+    def access_resource_with_postdata(self, oauth_request, postdata={}):
+        return self._excute(oauth_request, postdata)
+
+    def _excute(self, oauth_request, postdata={}):
         querystring = urlencode(oauth_request.get_nonoauth_parameters())
+        postdata_string = urlencode(postdata)
         if(oauth_request.http_method == 'GET'):
             request = Request(oauth_request.http_url+"?"+querystring, None, oauth_request.to_header())
         else:
-            print "\n"
-            print querystring
-            print "\n"
-            print oauth_request.http_url
-            print "\n"
-            print oauth_request.to_header()
-            print "\n"
-            print oauth_request.to_postdata()
-            print "\n"
-            print escape(oauth_request.get_normalized_http_method()),
-            print "\n"
-            print escape(oauth_request.get_normalized_http_url()),
-            print "\n"
-            #print escape(oauth_request.get_normalized_parameters()),
-            print "\n"
-            request = Request(oauth_request.http_url, querystring, oauth_request.to_header())
-            #request = Request(oauth_request.http_url+"?"+querystring, None, oauth_request.to_header())
+            request = Request(oauth_request.http_url+"?"+querystring, postdata_string, oauth_request.to_header())
         try:
             response = urlopen(request)
             return response.read()
@@ -121,9 +110,16 @@ def connect(request):
 
 def weibo_display(request):
     token = oauth.OAuthToken.from_string(request.session['token'])
-    #parameters = {'content':'aa','goUrl':'http://www.baidu.com/','tt':0}
-    parameters = {'content':'aa'}
-    oauth_request = oauth.OAuthRequest.from_consumer_and_token(client.consumer, token=token, http_url=WEIBO_URL,parameters=parameters, http_method='POST')
+    parameters = {'tt':4}
+    postdata = {'content':'aa','goUrl':'http://www.baidu.com/'}
+    oauth_request = oauth.OAuthRequest.from_consumer_and_token(client.consumer, token=token, http_url=WEIBO_URL, http_method='POST',parameters=parameters)
+    oauth_request.sign_request(oauth.OAuthSignatureMethod_HMAC_SHA1(),client.consumer,token)
+    params = client.access_resource_with_postdata(oauth_request, postdata)
+    return HttpResponse(params)
+
+def weibo_flag(request):
+    token = oauth.OAuthToken.from_string(request.session['token'])
+    oauth_request = oauth.OAuthRequest.from_consumer_and_token(client.consumer, token=token, http_url=WEIBO_FLAG_URL)
     oauth_request.sign_request(oauth.OAuthSignatureMethod_HMAC_SHA1(),client.consumer,token)
     params = client.access_resource(oauth_request)
     return HttpResponse(params)

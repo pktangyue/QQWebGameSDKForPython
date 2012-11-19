@@ -10,4 +10,5 @@ urlpatterns = patterns('',
     url(r'^friends$','oauth_test.views.friends'),
     url(r'^connect$','oauth_test.views.connect'),
     url(r'^weibo_display$','oauth_test.views.weibo_display'),
+    url(r'^weibo_flag$','oauth_test.views.weibo_flag'),
 )
